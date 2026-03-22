@@ -1,69 +1,99 @@
 # Práctica 4.1: Introducción a CI/CD con Flask y AWS
 
-Este repositorio contiene la entrega de la práctica de Integración Continua (CI) y Despliegue Manual en AWS. Se ha utilizado una aplicación Flask como base, añadiendo funcionalidades y tests unitarios coordinados mediante GitHub Actions.
+Este repositorio documenta el despliegue manual de una aplicación Flask en una instancia EC2 y la integración de un pipeline de CI con GitHub Actions. La práctica mantiene la misma esencia: app mínima, tests automáticos y validación del flujo en GitHub.
 
 ---
 
-## 1. Configuración de la Infraestructura en AWS
-Se ha desplegado una instancia EC2 (Ubuntu 24.04) configurando los Grupos de Seguridad para permitir el tráfico necesario.
+## 1. Infraestructura en AWS
 
-*   **Instancia EC2**: Estado en ejecución y detalles de IP pública.
-*   **Security Groups**: Apertura del puerto 8000 para la aplicación Flask, además de SSH (22), HTTP (80) y HTTPS (443).
+Se parte de una instancia EC2 en ejecución, revisando tanto su estado como los datos de red (IP/DNS) necesarios para la conexión y pruebas.
 
-![AWS Instance](image.png)
-![Security Groups](image-1.png)
-![Redes](image-2.png)
+![Instancias EC2 en ejecución](img/image.png)
+![Detalle de red y DNS de la instancia](img/image2.png)
 
 ---
 
-## 2. Proceso de Despliegue en el Servidor (SSH)
-Conexión mediante SSH y preparación del entorno de ejecución siguiendo estos pasos:
+## 2. Preparación del entorno por SSH
 
-1.  **Actualización del sistema** e instalación de python3-pip, python3-venv y git.
-2.  **Clonación del repositorio** desde GitHub.
-3.  **Configuración del entorno virtual (venv)** para aislar las dependencias.
-4.  **Instalación de librerías** contenidas en requirements.txt.
+Dentro del servidor se realizan los pasos de preparación del sistema y Python:
 
-![Instalación Herramientas](image-3.png)
-![Git Clone](image-4.png)
-![Entorno Virtual](image-5.png)
-![Instalación Requisitos](image-6.png)
+1. Actualización de paquetes.
+2. Instalación de herramientas necesarias (`python3-pip` y `python3.12-venv`).
+3. Creación del entorno virtual.
 
----
+Durante la actualización aparece un aviso de repositorio Docker no válido para `noble`, que no impide continuar con la práctica Flask.
 
-## 3. Servidor en Funcionamiento
-Lanzamiento de la aplicación y verificación de accesibilidad externa.
+![Actualización del sistema y aviso de repositorio](img/image3.png)
+![Instalación de python3.12-venv y creación de venv](img/image4.png)
+![Instalación de python3-pip](img/image5.png)
 
-*   **Ejecución**: El servidor escucha en 0.0.0.0:8000.
-*   **Ruta Raíz (/)**: Retorna el mensaje "Hello, World!".
-*   **Ruta de Salud (/health)**: Nueva funcionalidad añadida para monitorización.
+Al intentar instalar dependencias directamente con `pip` del sistema, aparece el error de entorno gestionado externamente. La solución es instalar dentro del entorno virtual:
 
-![Flask Run](image-7.png)
-![Navegador Home](image-8.png)
-![Navegador Health](image-9.png)
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+![Error al usar pip fuera del entorno virtual](img/image6.png)
 
 ---
 
-## 4. Integración Continua (GitHub Actions)
-Se ha implementado un pipeline de CI que se dispara automáticamente en cada push o pull_request a la rama main.
+## 3. Ejecución de Flask y validación funcional
 
-### Mejoras Realizadas:
-*   **Nuevos Tests**: Se han añadido tests para validar la ruta /health y el manejo de errores 404.
-*   **Automatización**: Configuración de .github/workflows/ci.yml.
+Se lanza la aplicación con Flask escuchando en todas las interfaces:
 
-### Resultados de la Integración:
-*   Verificación de que el workflow se completa con éxito.
-*   Detalle de la ejecución de los 3 tests unitarios satisfactoriamente.
+```bash
+flask --app src/app.py run --host=0.0.0.0
+```
 
-![Workflow List](image-10.png)
-![Unit Tests Detail](image-11.png)
-![Unit Tests Success Detail](image-12.png)
+Resultado observado:
+
+- App iniciada correctamente.
+- Respuesta `200` en la ruta principal.
+- Registro `404` para `favicon.ico`, comportamiento esperado.
+
+![Servidor Flask en ejecución](img/image7.png)
+![Respuesta en navegador: Hello, World!](img/image8.png)
 
 ---
 
-## 📂 Estructura del Proyecto
-- src/app.py: Aplicación Flask con rutas / y /health.
-- tests/test.py: Pruebas unitarias (Home, Health, 404).
-- .github/workflows/ci.yml: Configuración del pipeline de Integración Continua.
-- requirements.txt: Dependencias del proyecto.
-- Dockerfile: Configuración para contenedorización (opcional).
+## 4. Integración Continua con GitHub Actions
+
+Se configura el workflow de CI para ejecutarse automáticamente en `push` y `pull_request` hacia `main`.
+
+### Mejoras realizadas
+
+- Nuevos tests para `/health` y para error `404`.
+- Automatización en `.github/workflows/ci.yml`.
+
+### Resultado de integración
+
+- El workflow aparece en la vista **All workflows**.
+- La ejecución finaliza en verde.
+- Se confirma la ejecución satisfactoria de 3 tests unitarios.
+
+![Vista All workflows en GitHub Actions](img/image9.png)
+![Detalle del job con tests en verde](img/image10.png)
+
+---
+
+## 5. Estructura del proyecto
+
+```text
+practica4.1/
+├── .github/workflows/ci.yml
+├── src/app.py
+├── tests/test.py
+├── requirements.txt
+├── Dockerfile
+└── README.md
+```
+
+---
+
+## 6. Tecnologías utilizadas
+
+- Python 3.9+ / Flask
+- unittest
+- GitHub Actions
+- AWS EC2 (Ubuntu)
